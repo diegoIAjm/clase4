@@ -2,14 +2,12 @@ const inputLimite = document.getElementById("limite");
 const botonGenerar = document.getElementById("generar");
 const salida = document.getElementById("salida");
 
-// 🔹 Función auxiliar para crear un Worker a partir de código JS como string
 function crearWorker(fn) {
   const blob = new Blob(["onmessage = " + fn.toString()], { type: "application/javascript" });
   const url = URL.createObjectURL(blob);
   return new Worker(url);
 }
 
-// 🔹 Worker para pares
 function workerPares(e) {
   const limite = e.data;
   let pares = [];
@@ -21,7 +19,6 @@ function workerPares(e) {
   postMessage(pares.join(", "));
 }
 
-// 🔹 Worker para impares
 function workerImpares(e) {
   const limite = e.data;
   let impares = [];
@@ -37,15 +34,12 @@ botonGenerar.addEventListener("click", () => {
   salida.textContent = "Calculando...\n";
 
   const limite = parseInt(inputLimite.value);
-
-  // Crear workers desde funciones
   const wPares = crearWorker(workerPares);
   const wImpares = crearWorker(workerImpares);
 
   wPares.onmessage = (e) => salida.textContent += `Pares: ${e.data}\n`;
   wImpares.onmessage = (e) => salida.textContent += `Impares: ${e.data}\n`;
 
-  // Enviar límite
   wPares.postMessage(limite);
   wImpares.postMessage(limite);
 });
