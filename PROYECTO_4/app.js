@@ -15,24 +15,26 @@ function crearWorker(fn) {
   return new Worker(url);
 }
 
-// Criba para pares
-function workerPares(e) {
+// Criba de Eratóstenes para números primos
+function workerPrimos(e) {
   const limite = e.data;
-  const pares = [];
-  for (let i = 2; i <= limite; i += 2) {
-    pares.push(i);
-  }
-  postMessage(pares.join(", "));
-}
+  const esPrimo = new Array(limite + 1).fill(true);
+  esPrimo[0] = esPrimo[1] = false;
 
-// Criba para impares
-function workerImpares(e) {
-  const limite = e.data;
-  const impares = [];
-  for (let i = 1; i <= limite; i += 2) {
-    impares.push(i);
+  for (let i = 2; i * i <= limite; i++) {
+    if (esPrimo[i]) {
+      for (let j = i * i; j <= limite; j += i) {
+        esPrimo[j] = false;
+      }
+    }
   }
-  postMessage(impares.join(", "));
+
+  const primos = [];
+  for (let i = 2; i <= limite; i++) {
+    if (esPrimo[i]) primos.push(i);
+  }
+
+  postMessage(primos.join(", "));
 }
 
 // Búsqueda binaria en array ordenado
@@ -55,32 +57,27 @@ botonGenerar.addEventListener("click", () => {
   salida.textContent = "Calculando...\n";
 
   const limite = parseInt(inputLimite.value);
-  if(isNaN(limite) || limite <= 0){
-    salida.textContent = "Ingresa un número válido mayor que 0.";
+  if(isNaN(limite) || limite <= 1){
+    salida.textContent = "Ingresa un número válido mayor que 1.";
     return;
   }
 
-  // Crear workers
-  const wPares = crearWorker(workerPares);
-  const wImpares = crearWorker(workerImpares);
+  // Crear worker de primos
+  const wPrimos = crearWorker(workerPrimos);
 
-  wPares.onmessage = (e) => salida.textContent += `Pares: ${e.data}\n`;
-  wImpares.onmessage = (e) => salida.textContent += `Impares: ${e.data}\n`;
+  wPrimos.onmessage = (e) => salida.textContent += `Primos hasta ${limite}: ${e.data}\n`;
 
-  wPares.postMessage(limite);
-  wImpares.postMessage(limite);
+  wPrimos.postMessage(limite);
 
   // Buscar palabra en el párrafo
   const texto = inputTexto.value.trim();
   const palabra = inputPalabra.value.trim();
 
   if (palabra && texto) {
-    // Convertir párrafo en array de palabras y ordenar
     const palabrasArray = texto.split(/\W+/).filter(p => p).sort((a,b) => a.localeCompare(b, 'es', {sensitivity: 'base'}));
 
     const indice = busquedaBinaria(palabrasArray, palabra);
     if (indice !== -1) {
-      // Contar cuántas veces aparece la palabra
       const regex = new RegExp(`\\b${palabra}\\b`, 'gi');
       const coincidencias = texto.match(regex) || [];
       salida.textContent += `✅ La palabra "${palabra}" aparece ${coincidencias.length} vez/veces en el párrafo.\n`;
